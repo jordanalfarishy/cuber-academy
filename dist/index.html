@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1120" />
+    <meta name="description" content="Belajar Rubik 3×3 secara visual lewat kubus 3D interaktif, latihan gerakan, dan panduan langkah demi langkah." />
+    <title>Cuber — Belajar Rubik dengan cara melihat</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="#atas" aria-label="Cuber, kembali ke atas">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>cuber<span class="brand-period">.</span></span>
+        </a>
+        <nav class="main-nav" aria-label="Navigasi utama">
+          <a href="#belajar">Panduan</a>
+          <a href="#simulator">Simulator</a>
+          <a href="#notasi">Notasi</a>
+        </nav>
+        <a class="header-cta" href="#simulator">Mulai belajar <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <main id="atas">
+        <section class="intro" aria-labelledby="main-title">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> RUBIK 3×3, JADI LEBIH JELAS</div>
+            <h1 id="main-title">Pahami tiap putaran.<br /><em>Tak sekadar menghafal.</em></h1>
+            <p>Kenali pola, coba gerakannya langsung pada kubus 3D, lalu lanjutkan saat kamu siap.</p>
+          </div>
+          <div class="intro-aside"><span class="sparkle" aria-hidden="true">✦</span><span>Belajar dengan tangan,<br />ingat dengan mata.</span></div>
+        </section>
+
+        <section class="workspace" id="simulator" aria-label="Simulator dan tutorial Rubik">
+          <aside class="curriculum panel" id="belajar">
+            <div class="panel-topline"><span>01 / KURIKULUM</span><span class="small-dots" aria-hidden="true">•••</span></div>
+            <h2>Jalan menuju<br /><span>kubus selesai.</span></h2>
+            <p class="section-subtitle">Ikuti satu langkah pada satu waktu.</p>
+            <div class="progress-row"><span>Progres belajar</span><strong id="progress-text">0 dari 8 langkah</strong></div>
+            <div class="progress-track" aria-hidden="true"><span id="progress-fill"></span></div>
+            <div class="lesson-list" id="lesson-list"></div>
+            <div class="sidebar-note"><span class="note-icon" aria-hidden="true">✳</span><span>Tidak perlu terburu-buru. Setiap putaran adalah kemajuan.</span></div>
+          </aside>
+
+          <section class="simulator panel" aria-labelledby="simulator-title">
+            <div class="sim-topline"><div><span class="live-dot"></span><span>RUANG LATIHAN</span></div><span class="sim-version">INTERAKTIF 3D</span></div>
+            <div class="sim-heading"><div><p class="mini-label">SEKARANG BELAJAR</p><h2 id="simulator-title">Kenali kubusmu</h2></div><span class="lesson-count" id="lesson-count">01 / 08</span></div>
+            <div class="cube-area">
+              <div class="stage-ring ring-one"></div><div class="stage-ring ring-two"></div>
+              <div class="stage-halo"></div>
+              <div class="cube-wrap" id="cube-wrap" role="img" aria-label="Kubus Rubik 3D interaktif. Geser untuk melihat dari berbagai sisi.">
+                <div class="cube" id="cube"></div>
+              </div>
+              <div class="stage-caption"><span class="caption-icon" aria-hidden="true">↔</span><span>Geser kubus untuk melihat sisi lain</span></div>
+              <div class="axis-label axis-top">U</div><div class="axis-label axis-right">R</div><div class="axis-label axis-front">F</div>
+            </div>
+            <div class="cube-tools">
+              <button class="tool-button" id="scramble-button" type="button" title="Acak kubus"><span aria-hidden="true">⤨</span> Acak kubus</button>
+              <button class="tool-button" id="reset-button" type="button" title="Kembalikan kubus ke posisi semula"><span aria-hidden="true">↺</span> Reset</button>
+              <button class="tool-button" id="undo-button" type="button" title="Batalkan putaran terakhir"><span aria-hidden="true">↶</span> Undo</button>
+            </div>
+            <div class="move-console">
+              <div class="console-header"><div><span class="mini-label">COBA SENDIRI</span><p>Putar satu sisi</p></div><span class="console-help">Klik huruf untuk memutar 90°</span></div>
+              <div class="move-grid" id="move-grid" aria-label="Kontrol putaran sisi kubus"></div>
+              <div class="console-footer"><span><b>R</b> searah jarum jam</span><span><b>R’</b> berlawanan arah</span></div>
+            </div>
+          </section>
+
+          <aside class="guide panel" aria-labelledby="guide-title">
+            <div class="panel-topline"><span>02 / PANDUAN</span><span class="guide-icon" aria-hidden="true">✦</span></div>
+            <div class="guide-scroll">
+              <div class="guide-badge" id="guide-badge">LANGKAH 01</div>
+              <h2 id="guide-title">Kenali kubusmu</h2>
+              <p class="guide-lead" id="guide-lead"></p>
+              <div class="guide-divider"></div>
+              <div class="guide-section"><div class="guide-section-heading"><span class="section-symbol">◎</span><h3>Yang perlu kamu lihat</h3></div><p id="guide-observation"></p></div>
+              <div class="guide-section"><div class="guide-section-heading"><span class="section-symbol">↗</span><h3>Gerakan latihan</h3></div><p id="guide-instruction"></p><div class="algorithm" id="algorithm" aria-label="Notasi gerakan latihan"></div></div>
+              <button class="run-button" id="run-button" type="button"><span aria-hidden="true">▶</span><span>Jalankan gerakan</span><span aria-hidden="true">↗</span></button>
+              <div class="tip-box"><span class="tip-star" aria-hidden="true">✳</span><div><strong>TIP KECIL</strong><p id="guide-tip"></p></div></div>
+            </div>
+            <div class="guide-bottom"><button class="next-button" id="next-button" type="button">Tandai selesai & lanjut <span aria-hidden="true">→</span></button><span id="completion-hint">Progres disimpan di browser ini.</span></div>
+          </aside>
+        </section>
+
+        <section class="notation-section" id="notasi" aria-labelledby="notation-title">
+          <div class="notation-intro"><span class="mini-label">KAMUS MINI</span><h2 id="notation-title">Satu huruf,<br /><em>satu sisi.</em></h2><p>Notasi adalah petunjuk arah. Bayangkan selalu kamu sedang melihat sisi yang akan diputar.</p><a class="source-link" href="https://coach.rubiks.com/en/quick-reference" target="_blank" rel="noopener noreferrer">Metode dari panduan resmi Rubik’s ↗</a></div>
+          <div class="notation-cards"><div><b>R</b><span>Right / kanan</span></div><div><b>U</b><span>Up / atas</span></div><div><b>F</b><span>Front / depan</span></div><div><b>’</b><span>Putar berlawanan arah</span></div><div><b>2</b><span>Putar dua kali (180°)</span></div><div><b>→</b><span>Baca dari kiri ke kanan</span></div></div>
+        </section>
+      </main>
+      <footer class="site-footer"><span>cuber<span class="brand-period">.</span></span><span>Belajar Rubik, satu putaran setiap kali.</span><a href="#atas">Kembali ke atas ↑</a></footer>
+    </div>
+    <div class="sr-only" aria-live="polite" id="announcement"></div>
+  </body>
+</html>
