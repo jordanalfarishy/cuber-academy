@@ -7,7 +7,10 @@
     <meta name="description" content="Belajar Rubik 3×3 secara visual lewat kubus 3D interaktif, latihan gerakan, dan panduan langkah demi langkah." />
     <title>Cuber — Belajar Rubik dengan cara melihat</title>
     <link rel="stylesheet" href="./style.css" />
+    <script src="./vendor/cube.js" defer></script>
+    <script src="./cube-state.js" defer></script>
     <script src="./app.js" defer></script>
+    <script src="./real-cube.js" defer></script>
   </head>
   <body>
     <div class="page-shell">
@@ -19,6 +22,7 @@
         <nav class="main-nav" aria-label="Navigasi utama">
           <a href="#belajar">Panduan</a>
           <a href="#simulator">Simulator</a>
+          <a href="#rubik-asli">Rubik asli</a>
           <a href="#notasi">Notasi</a>
         </nav>
         <a class="header-cta" href="#simulator">Mulai belajar <span aria-hidden="true">↗</span></a>
@@ -30,6 +34,7 @@
             <div class="eyebrow"><span class="eyebrow-line"></span> RUBIK 3×3, JADI LEBIH JELAS</div>
             <h1 id="main-title">Pahami tiap putaran.<br /><em>Tak sekadar menghafal.</em></h1>
             <p>Kenali pola, coba gerakannya langsung pada kubus 3D, lalu lanjutkan saat kamu siap.</p>
+            <a class="intro-mode-link" href="#rubik-asli">Punya Rubik yang sudah teracak? Masukkan warnanya <span aria-hidden="true">↗</span></a>
           </div>
           <div class="intro-aside"><span class="sparkle" aria-hidden="true">✦</span><span>Belajar dengan tangan,<br />ingat dengan mata.</span></div>
         </section>
@@ -62,6 +67,10 @@
               <button class="tool-button" id="reset-button" type="button" title="Kembalikan kubus ke posisi semula"><span aria-hidden="true">↺</span> Reset</button>
               <button class="tool-button" id="undo-button" type="button" title="Batalkan putaran terakhir"><span aria-hidden="true">↶</span> Undo</button>
             </div>
+            <div class="solution-dock" id="solution-dock" hidden>
+              <div><span class="mini-label">SOLUSI RUBIK ASLI</span><strong id="dock-move">Langkah 1</strong><p id="dock-description"></p><div class="dock-track"><span id="dock-fill"></span></div><small id="dock-count"></small></div>
+              <div class="dock-actions"><button type="button" id="dock-prev">← Sebelumnya</button><button type="button" id="dock-next">Putar langkah ini →</button></div>
+            </div>
             <div class="move-console">
               <div class="console-header"><div><span class="mini-label">COBA SENDIRI</span><p>Putar satu sisi</p></div><span class="console-help">Klik huruf untuk memutar 90°</span></div>
               <div class="move-grid" id="move-grid" aria-label="Kontrol putaran sisi kubus"></div>
@@ -83,6 +92,41 @@
             </div>
             <div class="guide-bottom"><button class="next-button" id="next-button" type="button">Tandai selesai & lanjut <span aria-hidden="true">→</span></button><span id="completion-hint">Progres disimpan di browser ini.</span></div>
           </aside>
+        </section>
+
+        <section class="real-section" id="rubik-asli" aria-labelledby="real-title">
+          <div class="real-section-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> MODE RUBIK ASLI</span><h2 id="real-title">Mulai dari warna <em>kubusmu.</em></h2><p>Salin warna dari Rubik yang sudah teracak. Aplikasi akan memeriksa susunannya dan memandu putaran menuju selesai.</p></div><div class="real-heading-aside"><span>54</span><small>KOTAK<br />6 SISI</small></div></div>
+          <div class="real-workspace">
+            <section class="real-input panel" aria-labelledby="real-input-title">
+              <div class="panel-topline"><span>01 / SALIN WARNA</span><span class="guide-icon" aria-hidden="true">✦</span></div>
+              <h3 id="real-input-title">Isi satu sisi,<br />lalu lanjut.</h3>
+              <p class="real-help">Pilih warna, lalu ketuk kotaknya. Kotak tengah adalah warna pusat dan bisa diubah sesuai Rubikmu.</p>
+              <div class="face-tabs" id="face-tabs" role="tablist" aria-label="Pilih sisi yang diisi"></div>
+              <div class="face-card"><div class="face-card-top"><div><span class="mini-label" id="face-label">SISI ATAS</span><strong id="face-name">Atas / U</strong></div><span id="face-count">1 / 9</span></div><p id="face-orientation">Bagian bawah grid ini berbatasan dengan sisi depan.</p><div class="sticker-grid" id="sticker-grid" aria-label="Kotak warna sisi yang dipilih"></div></div>
+              <span class="mini-label palette-heading">PILIH WARNA</span>
+              <div class="color-palette" id="color-palette" aria-label="Pilihan warna stiker"></div>
+              <div class="face-navigation"><button type="button" id="prev-face">← Sisi sebelumnya</button><button type="button" id="next-face">Sisi berikutnya →</button></div>
+            </section>
+            <section class="real-preview panel" aria-labelledby="real-preview-title">
+              <div class="panel-topline"><span>02 / PRATINJAU 3D</span><span class="sim-version">LANGSUNG</span></div>
+              <h3 id="real-preview-title">Bentuk yang kamu isi.</h3>
+              <p>Geser untuk memutar. Setelah memilih warna, ketuk kotak 3D untuk mengisinya.</p>
+              <div class="cube-area real-cube-area"><div class="stage-ring ring-one"></div><div class="stage-halo"></div><div class="cube-wrap" id="real-cube-wrap" role="img" aria-label="Pratinjau 3D dari warna Rubik yang sedang diisi"><div class="cube" id="real-cube"></div></div><div class="stage-caption"><span class="caption-icon" aria-hidden="true">↔</span><span>Geser untuk melihat sisi lainnya</span></div></div>
+              <div class="real-progress"><div><strong id="filled-count">6 dari 54 kotak</strong><span id="filled-percent">11%</span></div><div class="progress-track"><span id="real-progress-fill"></span></div></div>
+              <div class="real-preview-note"><span aria-hidden="true">◎</span><p>Jaga arah atas dan depan tetap konsisten ketika berpindah sisi. Petunjuk pada editor menunjukkan tepi yang bersentuhan dengan sisi depan.</p></div>
+            </section>
+            <section class="real-result panel" aria-labelledby="real-result-title">
+              <div class="panel-topline"><span>03 / SELESAIKAN</span><span class="guide-icon" aria-hidden="true">✦</span></div>
+              <h3 id="real-result-title">Dari kondisi nyata<br />ke langkah pertama.</h3>
+              <p class="real-result-lead">Periksa semua enam sisi. Setiap warna harus muncul tepat 9 kali agar sesuai dengan sebuah Rubik 3×3.</p>
+              <div class="color-counts" id="color-counts" aria-label="Jumlah setiap warna"></div>
+              <div class="real-message" id="real-message" role="status">Isi semua kotak, lalu cari solusinya.</div>
+              <button type="button" class="run-button solve-button" id="solve-real"><span aria-hidden="true">✦</span><span>Cari solusi Rubik saya</span><span aria-hidden="true">↗</span></button>
+              <div class="real-result-actions"><button type="button" id="demo-real">Isi contoh acak</button><button type="button" id="clear-real">Kosongkan kotak</button></div>
+              <p class="local-note">Isian warna tersimpan di browser ini. Solusi dihitung langsung di perangkatmu.</p>
+              <div class="solution-result" id="solution-result" hidden><div class="solution-result-header"><strong id="solution-summary">Solusi siap</strong><span id="solution-progress">0 / 0</span></div><p>Ikuti urutan di bawah dari kiri ke kanan. Tombol langkah di dekat kubus 3D akan memperagakannya.</p><div class="solution-moves" id="solution-moves"></div><a href="#simulator" class="solution-jump">Lihat langkah pada kubus 3D ↗</a></div>
+            </section>
+          </div>
         </section>
 
         <section class="notation-section" id="notasi" aria-labelledby="notation-title">

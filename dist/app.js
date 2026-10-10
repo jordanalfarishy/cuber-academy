@@ -10,7 +10,7 @@ const lessons = [
 ];
 
 const color = {front:'#ec594f',back:'#f7a042',right:'#4a88e9',left:'#60c284',top:'#f2d653',bottom:'#f5f6e8'};
-const faceMeta = {F:{axis:2,layer:1,dir:1},B:{axis:2,layer:-1,dir:-1},R:{axis:0,layer:1,dir:1},L:{axis:0,layer:-1,dir:-1},U:{axis:1,layer:-1,dir:-1},D:{axis:1,layer:1,dir:1}};
+const faceMeta = CubeState.faceMeta;
 const identity = [1,0,0,0,1,0,0,0,1];
 const els = Object.fromEntries(['cube','cube-wrap','lesson-list','progress-text','progress-fill','simulator-title','lesson-count','guide-badge','guide-title','guide-lead','guide-observation','guide-instruction','algorithm','guide-tip','move-grid','run-button','next-button','scramble-button','reset-button','undo-button','announcement'].map(id=>[id,document.getElementById(id)]));
 let cubies=[];
@@ -33,7 +33,7 @@ function makeCubie(x,y,z){
 function matrix(c){const o=c.o,[x,y,z]=c.p.map(n=>n*70);return `matrix3d(${o[0]},${o[3]},${o[6]},0,${o[1]},${o[4]},${o[7]},0,${o[2]},${o[5]},${o[8]},0,${x},${y},${z},1)`;}
 function renderCube(instant=false){for(const c of cubies){if(instant)c.element.classList.add('no-transition');c.element.style.transform=matrix(c);}if(instant)requestAnimationFrame(()=>requestAnimationFrame(()=>cubies.forEach(c=>c.element.classList.remove('no-transition'))));}
 function resetCube(){els.cube.replaceChildren();cubies=[];for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++)if(x||y||z)cubies.push(makeCubie(x,y,z));renderCube(true);viewX=-25;viewY=-35;updateView();history=[];announce('Kubus kembali ke posisi awal.');}
-function rotateVector(v,axis,dir){const [x,y,z]=v;if(axis===0)return[x,-dir*z,dir*y];if(axis===1)return[dir*z,y,-dir*x];return[-dir*y,dir*x,z];}
+const rotateVector = CubeState.rotateVector;
 function rotateMatrix(m,axis,dir){const columns=[[m[0],m[3],m[6]],[m[1],m[4],m[7]],[m[2],m[5],m[8]]].map(v=>rotateVector(v,axis,dir));return[columns[0][0],columns[1][0],columns[2][0],columns[0][1],columns[1][1],columns[2][1],columns[0][2],columns[1][2],columns[2][2]];}
 function parseMove(move){const face=move[0];if(!faceMeta[face])return null;return{face,prime:move.includes("'"),twice:move.includes('2')};}
 function applyQuarter(face,prime=false,instant=false){const {axis,layer,dir}=faceMeta[face];const direction=dir*(prime?-1:1);for(const c of cubies){if(c.p[axis]!==layer)continue;c.p=rotateVector(c.p,axis,direction);c.o=rotateMatrix(c.o,axis,direction);}renderCube(instant);}
@@ -41,7 +41,7 @@ function pause(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 async function executeMove(move,{record=true,instant=false}={}){const parsed=parseMove(move);if(!parsed)return;const count=parsed.twice?2:1;for(let i=0;i<count;i++){applyQuarter(parsed.face,parsed.prime,instant);if(!instant)await pause(410);}if(record)history.push(move);announce(`Sisi ${parsed.face} diputar${parsed.prime?' berlawanan arah jarum jam':''}${parsed.twice?' dua kali':''}.`);}
 async function runMoves(moves){if(busy)return;busy=true;setDisabled(true);for(const move of moves)await executeMove(move);busy=false;setDisabled(false);}
 function setDisabled(value){for(const button of document.querySelectorAll('.move-button,.algorithm button'))button.disabled=value;for(const key of ['run-button','scramble-button','reset-button','undo-button'])els[key].disabled=value;}
-function queueMove(move){if(busy)return;runMoves([move]);}
+function queueMove(move){if(busy)return;window.dispatchEvent(new Event('cuber:manual-change'));runMoves([move]);}
 function announce(message){els.announcement.textContent=message;}
 function saveProgress(){localStorage.setItem('cuber-progress',JSON.stringify([...completed]));}
 function buildLessons(){els['lesson-list'].replaceChildren();lessons.forEach((lesson,index)=>{const button=document.createElement('button');button.className=`lesson-item${index===currentLesson?' active':''}${completed.has(index)?' done':''}`;button.type='button';button.setAttribute('aria-current',index===currentLesson?'step':'false');button.innerHTML=`<span class="lesson-number">${completed.has(index)?'✓':String(index+1).padStart(2,'0')}</span><span class="lesson-copy"><strong>${lesson.title}</strong><small>${lesson.short}</small></span><span class="lesson-arrow" aria-hidden="true">›</span>`;button.addEventListener('click',()=>selectLesson(index));els['lesson-list'].append(button);});}
@@ -52,9 +52,20 @@ function updateView(){els.cube.style.transform=`rotateX(${viewX}deg) rotateY(${v
 els['cube-wrap'].addEventListener('pointerdown',event=>{drag={x:event.clientX,y:event.clientY,viewX,viewY};els['cube-wrap'].setPointerCapture(event.pointerId);});
 els['cube-wrap'].addEventListener('pointermove',event=>{if(!drag)return;viewY=drag.viewY+(event.clientX-drag.x)*.5;viewX=Math.max(-85,Math.min(85,drag.viewX-(event.clientY-drag.y)*.5));updateView();});
 els['cube-wrap'].addEventListener('pointerup',()=>drag=null);els['cube-wrap'].addEventListener('pointercancel',()=>drag=null);
-els['run-button'].addEventListener('click',()=>runMoves(lessons[currentLesson].algorithm));
+els['run-button'].addEventListener('click',()=>{window.dispatchEvent(new Event('cuber:manual-change'));runMoves(lessons[currentLesson].algorithm);});
 els['next-button'].addEventListener('click',()=>{completed.add(currentLesson);saveProgress();if(currentLesson<lessons.length-1)selectLesson(currentLesson+1);else{selectLesson(currentLesson);announce('Selamat! Semua pelajaran selesai.');}document.getElementById('simulator').scrollIntoView({behavior:'smooth',block:'start'});});
-els['reset-button'].addEventListener('click',()=>{if(busy)return;resetCube();});
-els['undo-button'].addEventListener('click',async()=>{if(busy||!history.length)return;const last=history.pop();const inverse=last.endsWith('2')?last:last.endsWith("'")?last[0]:last[0]+"'";busy=true;setDisabled(true);await executeMove(inverse,{record:false});busy=false;setDisabled(false);});
-els['scramble-button'].addEventListener('click',()=>{if(busy)return;const sides=['F','R','U','L','D','B'];let previous='';for(let i=0;i<24;i++){let face;do{face=sides[Math.floor(Math.random()*sides.length)];}while(face===previous);previous=face;const move=face+(Math.random()<.5?"'":'');applyQuarter(face,move.includes("'"),true);history.push(move);}announce('Kubus diacak. Coba putar sisi untuk berlatih.');});
+els['reset-button'].addEventListener('click',()=>{if(busy)return;if(window.CuberApp.restoreInput)window.CuberApp.restoreInput();else resetCube();});
+els['undo-button'].addEventListener('click',async()=>{if(busy||!history.length)return;window.dispatchEvent(new Event('cuber:manual-change'));const last=history.pop();const inverse=last.endsWith('2')?last:last.endsWith("'")?last[0]:last[0]+"'";busy=true;setDisabled(true);await executeMove(inverse,{record:false});busy=false;setDisabled(false);});
+els['scramble-button'].addEventListener('click',()=>{if(busy)return;window.dispatchEvent(new Event('cuber:manual-change'));const sides=['F','R','U','L','D','B'];let previous='';for(let i=0;i<24;i++){let face;do{face=sides[Math.floor(Math.random()*sides.length)];}while(face===previous);previous=face;const move=face+(Math.random()<.5?"'":'');applyQuarter(face,move.includes("'"),true);history.push(move);}announce('Kubus diacak. Coba putar sisi untuk berlatih.');});
+function loadFacelets(state){
+  resetCube();
+  const atPosition=new Map(cubies.map(c=>[c.p.join(','),c]));
+  for(const face of CubeState.faces)for(let index=0;index<9;index++){
+    const cubie=atPosition.get(CubeState.position(face,index).join(','));
+    const sticker=cubie.element.querySelector(`.${CubeState.faceClass[face]}`);
+    sticker.style.setProperty('--sticker',CubeState.colors[state[face][index]].hex);
+  }
+  announce('Warna Rubik asli diterapkan pada kubus 3D.');
+}
+window.CuberApp={loadFacelets,playMove:move=>runMoves([move]),isBusy:()=>busy,restoreInput:null};
 createMoves();resetCube();selectLesson(0);
