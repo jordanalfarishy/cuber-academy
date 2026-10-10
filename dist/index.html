@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0b1120" />
     <meta name="description" content="Belajar Rubik 3×3 secara visual lewat kubus 3D interaktif, latihan gerakan, dan panduan langkah demi langkah." />
     <title>Cuber — Belajar Rubik dengan cara melihat</title>
+    <script src="./mode.js"></script>
     <link rel="stylesheet" href="./style.css" />
     <script src="./vendor/cube.js" defer></script>
     <script src="./cube-state.js" defer></script>
@@ -15,32 +16,29 @@
   <body>
     <div class="page-shell">
       <header class="site-header">
-        <a class="brand" href="#atas" aria-label="Cuber, kembali ke atas">
+        <a class="brand" href="#belajar" aria-label="Cuber, buka mode belajar">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
           <span>cuber<span class="brand-period">.</span></span>
         </a>
-        <nav class="main-nav" aria-label="Navigasi utama">
-          <a href="#belajar">Panduan</a>
-          <a href="#simulator">Simulator</a>
-          <a href="#rubik-asli">Rubik asli</a>
-          <a href="#notasi">Notasi</a>
+        <nav class="main-nav mode-switch" aria-label="Pilih mode">
+          <a href="#belajar" data-mode-link="belajar">Belajar</a>
+          <a href="#simulator" data-mode-link="simulator">Simulator</a>
         </nav>
-        <a class="header-cta" href="#simulator">Mulai belajar <span aria-hidden="true">↗</span></a>
       </header>
 
       <main id="atas">
-        <section class="intro" aria-labelledby="main-title">
+        <section class="intro learning-view" aria-labelledby="main-title">
           <div>
             <div class="eyebrow"><span class="eyebrow-line"></span> RUBIK 3×3, JADI LEBIH JELAS</div>
             <h1 id="main-title">Pahami tiap putaran.<br /><em>Tak sekadar menghafal.</em></h1>
             <p>Kenali pola, coba gerakannya langsung pada kubus 3D, lalu lanjutkan saat kamu siap.</p>
-            <a class="intro-mode-link" href="#rubik-asli">Punya Rubik yang sudah teracak? Masukkan warnanya <span aria-hidden="true">↗</span></a>
+            <a class="intro-mode-link" href="#simulator">Punya Rubik yang sudah teracak? Masukkan warnanya <span aria-hidden="true">↗</span></a>
           </div>
           <div class="intro-aside"><span class="sparkle" aria-hidden="true">✦</span><span>Belajar dengan tangan,<br />ingat dengan mata.</span></div>
         </section>
 
-        <section class="workspace" id="simulator" aria-label="Simulator dan tutorial Rubik">
-          <aside class="curriculum panel" id="belajar">
+        <section class="workspace learning-view" id="belajar" aria-label="Panduan belajar Rubik">
+          <aside class="curriculum panel">
             <div class="panel-topline"><span>01 / KURIKULUM</span><span class="small-dots" aria-hidden="true">•••</span></div>
             <h2>Jalan menuju<br /><span>kubus selesai.</span></h2>
             <p class="section-subtitle">Ikuti satu langkah pada satu waktu.</p>
@@ -67,10 +65,6 @@
               <button class="tool-button" id="reset-button" type="button" title="Kembalikan kubus ke posisi semula"><span aria-hidden="true">↺</span> Reset</button>
               <button class="tool-button" id="undo-button" type="button" title="Batalkan putaran terakhir"><span aria-hidden="true">↶</span> Undo</button>
             </div>
-            <div class="solution-dock" id="solution-dock" hidden>
-              <div><span class="mini-label">SOLUSI RUBIK ASLI</span><strong id="dock-move">Langkah 1</strong><p id="dock-description"></p><div class="dock-track"><span id="dock-fill"></span></div><small id="dock-count"></small></div>
-              <div class="dock-actions"><button type="button" id="dock-prev">← Sebelumnya</button><button type="button" id="dock-next">Putar langkah ini →</button></div>
-            </div>
             <div class="move-console">
               <div class="console-header"><div><span class="mini-label">COBA SENDIRI</span><p>Putar satu sisi</p></div><span class="console-help">Klik huruf untuk memutar 90°</span></div>
               <div class="move-grid" id="move-grid" aria-label="Kontrol putaran sisi kubus"></div>
@@ -94,7 +88,7 @@
           </aside>
         </section>
 
-        <section class="real-section" id="rubik-asli" aria-labelledby="real-title">
+        <section class="real-section simulator-view" id="simulator" aria-labelledby="real-title">
           <div class="real-section-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> MODE RUBIK ASLI</span><h2 id="real-title">Mulai dari warna <em>kubusmu.</em></h2><p>Salin warna dari Rubik yang sudah teracak. Aplikasi akan memeriksa susunannya dan memandu putaran menuju selesai.</p></div><div class="real-heading-aside"><span>54</span><small>KOTAK<br />6 SISI</small></div></div>
           <div class="real-workspace">
             <section class="real-input panel" aria-labelledby="real-input-title">
@@ -112,6 +106,10 @@
               <h3 id="real-preview-title">Bentuk yang kamu isi.</h3>
               <p>Geser untuk memutar. Setelah memilih warna, ketuk kotak 3D untuk mengisinya.</p>
               <div class="cube-area real-cube-area"><div class="stage-ring ring-one"></div><div class="stage-halo"></div><div class="cube-wrap" id="real-cube-wrap" role="img" aria-label="Pratinjau 3D dari warna Rubik yang sedang diisi"><div class="cube" id="real-cube"></div></div><div class="stage-caption"><span class="caption-icon" aria-hidden="true">↔</span><span>Geser untuk melihat sisi lainnya</span></div></div>
+              <div class="solution-dock" id="solution-dock" hidden>
+                <div><span class="mini-label">LANGKAH PENYELESAIAN</span><strong id="dock-move">Langkah 1</strong><p id="dock-description"></p><div class="dock-track"><span id="dock-fill"></span></div><small id="dock-count"></small></div>
+                <div class="dock-actions"><button type="button" id="dock-reset">↺ Ulangi</button><button type="button" id="dock-prev">← Sebelumnya</button><button type="button" id="dock-next">Putar langkah ini →</button></div>
+              </div>
               <div class="real-progress"><div><strong id="filled-count">6 dari 54 kotak</strong><span id="filled-percent">11%</span></div><div class="progress-track"><span id="real-progress-fill"></span></div></div>
               <div class="real-preview-note"><span aria-hidden="true">◎</span><p>Jaga arah atas dan depan tetap konsisten ketika berpindah sisi. Petunjuk pada editor menunjukkan tepi yang bersentuhan dengan sisi depan.</p></div>
             </section>
@@ -124,17 +122,17 @@
               <button type="button" class="run-button solve-button" id="solve-real"><span aria-hidden="true">✦</span><span>Cari solusi Rubik saya</span><span aria-hidden="true">↗</span></button>
               <div class="real-result-actions"><button type="button" id="demo-real">Isi contoh acak</button><button type="button" id="clear-real">Kosongkan kotak</button></div>
               <p class="local-note">Isian warna tersimpan di browser ini. Solusi dihitung langsung di perangkatmu.</p>
-              <div class="solution-result" id="solution-result" hidden><div class="solution-result-header"><strong id="solution-summary">Solusi siap</strong><span id="solution-progress">0 / 0</span></div><p>Ikuti urutan di bawah dari kiri ke kanan. Tombol langkah di dekat kubus 3D akan memperagakannya.</p><div class="solution-moves" id="solution-moves"></div><a href="#simulator" class="solution-jump">Lihat langkah pada kubus 3D ↗</a></div>
+              <div class="solution-result" id="solution-result" hidden><div class="solution-result-header"><strong id="solution-summary">Solusi siap</strong><span id="solution-progress">0 / 0</span></div><p>Ikuti urutan di bawah dari kiri ke kanan. Tombol langkah pada pratinjau 3D akan memperagakannya.</p><div class="solution-moves" id="solution-moves"></div><button type="button" id="show-preview" class="solution-jump">Lihat langkah pada kubus 3D ↗</button></div>
             </section>
           </div>
         </section>
 
-        <section class="notation-section" id="notasi" aria-labelledby="notation-title">
+        <section class="notation-section learning-view" id="notasi" aria-labelledby="notation-title">
           <div class="notation-intro"><span class="mini-label">KAMUS MINI</span><h2 id="notation-title">Satu huruf,<br /><em>satu sisi.</em></h2><p>Notasi adalah petunjuk arah. Bayangkan selalu kamu sedang melihat sisi yang akan diputar.</p><a class="source-link" href="https://coach.rubiks.com/en/quick-reference" target="_blank" rel="noopener noreferrer">Metode dari panduan resmi Rubik’s ↗</a></div>
           <div class="notation-cards"><div><b>R</b><span>Right / kanan</span></div><div><b>U</b><span>Up / atas</span></div><div><b>F</b><span>Front / depan</span></div><div><b>’</b><span>Putar berlawanan arah</span></div><div><b>2</b><span>Putar dua kali (180°)</span></div><div><b>→</b><span>Baca dari kiri ke kanan</span></div></div>
         </section>
       </main>
-      <footer class="site-footer"><span>cuber<span class="brand-period">.</span></span><span>Belajar Rubik, satu putaran setiap kali.</span><a href="#atas">Kembali ke atas ↑</a></footer>
+      <footer class="site-footer"><span>cuber<span class="brand-period">.</span></span><span>Belajar Rubik, satu putaran setiap kali.</span><a href="#atas" id="back-to-top">Kembali ke atas ↑</a></footer>
     </div>
     <div class="sr-only" aria-live="polite" id="announcement"></div>
   </body>

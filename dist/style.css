@@ -25,3 +25,19 @@
 
 .real-cube-area .cubie-face.paintable{cursor:crosshair}
 .real-result .local-note{margin:11px 0 0;color:#8194a7;font-size:9px;line-height:1.5}
+
+/* Two clear, mutually exclusive app modes. */
+[data-mode="belajar"] .simulator-view,[data-mode="simulator"] .learning-view{display:none!important}
+.site-header{position:relative;justify-content:flex-start}
+.mode-switch{position:absolute;left:50%;transform:translateX(-50%);margin:0;display:grid;grid-template-columns:repeat(2,minmax(126px,1fr));gap:4px;padding:5px;background:#1b293b;border:1px solid #3b5067;border-radius:12px;box-shadow:0 10px 30px #030b19aa}
+.mode-switch a{display:grid;place-items:center;min-height:38px;padding:0 20px;border-radius:8px;color:#bac9d4;font:700 12px 'Space Grotesk',sans-serif;letter-spacing:.2px;transition:background .2s,color .2s,box-shadow .2s}
+.mode-switch a:hover{color:#fff;background:#30455b}
+[data-mode="belajar"] .mode-switch a[data-mode-link="belajar"],[data-mode="simulator"] .mode-switch a[data-mode-link="simulator"]{color:#162215;background:var(--lime);box-shadow:0 3px 12px #c7f47b29}
+[data-mode="belajar"] .mode-switch a[data-mode-link="belajar"]:hover,[data-mode="simulator"] .mode-switch a[data-mode-link="simulator"]:hover{color:#162215;background:#ddff9c}
+.real-section{padding:54px 0 88px}
+.real-preview .solution-dock{grid-template-columns:1fr;gap:10px;margin:16px 0 18px}
+.real-preview .dock-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.real-preview .dock-actions button{min-height:39px;padding:7px 5px;white-space:normal;line-height:1.25}
+.solution-jump{border:0;background:none;padding:0 0 3px;border-bottom:1px solid #c7f47b66;cursor:pointer;font:700 10px 'DM Sans',sans-serif}
+.real-cube-area .cubie-face::after{transition:background .2s}
+@media(max-width:760px){.site-header{height:124px;display:flex;flex-direction:column;justify-content:center;gap:12px}.brand{font-size:22px}.mode-switch{position:static;transform:none;display:grid;margin:0;grid-template-columns:repeat(2,minmax(0,1fr));width:min(100%,340px)}.mode-switch a{min-height:36px}.real-section{padding-top:38px}}

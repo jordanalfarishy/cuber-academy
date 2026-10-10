@@ -7,16 +7,21 @@
     'filled-count', 'filled-percent', 'real-progress-fill', 'color-counts', 'real-message',
     'solve-real', 'demo-real', 'clear-real', 'solution-result', 'solution-summary',
     'solution-progress', 'solution-moves', 'solution-dock', 'dock-move',
-    'dock-description', 'dock-fill', 'dock-count', 'dock-prev', 'dock-next'
+    'dock-description', 'dock-fill', 'dock-count', 'dock-reset', 'dock-prev', 'dock-next',
+    'show-preview'
   ].map(id => [id, $(id)]));
   const storageKey = 'cuber-real-colors-v1';
   const mainCubies = [...document.querySelectorAll('#cube .cubie')];
   const previewCubies = new Map();
+  const previewPieces = [];
+  const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
   let state = readSavedState();
   let activeFace = 'U';
   let selectedColor = state.U[4];
   let solution = null;
   let solutionIndex = 0;
+  let previewBusy = false;
+  let playbackId = 0;
   let solving = false;
   let worker = null;
   let pendingReject = null;
@@ -46,6 +51,7 @@
       const clone = mainCubies[index++].cloneNode(true);
       ui['real-cube'].append(clone);
       previewCubies.set([x, y, z].join(','), clone);
+      previewPieces.push({ p: [x, y, z], o: [...identity], element: clone, initial: [x, y, z] });
     }
     for (const face of S.faces) for (let index = 0; index < 9; index++) {
       const cubie = previewCubies.get(S.position(face, index).join(','));
@@ -53,6 +59,48 @@
       sticker.classList.add('paintable');
       sticker.dataset.face = face;
       sticker.dataset.index = String(index);
+    }
+  }
+
+  function pieceTransform(piece) {
+    const o = piece.o;
+    const [x, y, z] = piece.p.map(value => value * 70);
+    return `matrix3d(${o[0]},${o[3]},${o[6]},0,${o[1]},${o[4]},${o[7]},0,${o[2]},${o[5]},${o[8]},0,${x},${y},${z},1)`;
+  }
+
+  function rotateMatrix(matrix, axis, direction) {
+    const columns = [[matrix[0], matrix[3], matrix[6]], [matrix[1], matrix[4], matrix[7]], [matrix[2], matrix[5], matrix[8]]]
+      .map(vector => S.rotateVector(vector, axis, direction));
+    return [columns[0][0], columns[1][0], columns[2][0], columns[0][1], columns[1][1], columns[2][1], columns[0][2], columns[1][2], columns[2][2]];
+  }
+
+  function resetPreviewGeometry() {
+    for (const piece of previewPieces) {
+      piece.p = [...piece.initial];
+      piece.o = [...identity];
+      piece.element.classList.add('no-transition');
+      piece.element.style.transform = pieceTransform(piece);
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => previewPieces.forEach(piece => piece.element.classList.remove('no-transition'))));
+  }
+
+  function rotatePreviewQuarter(face, prime) {
+    const { axis, layer, dir } = S.faceMeta[face];
+    const direction = dir * (prime ? -1 : 1);
+    for (const piece of previewPieces) {
+      if (piece.p[axis] !== layer) continue;
+      piece.p = S.rotateVector(piece.p, axis, direction);
+      piece.o = rotateMatrix(piece.o, axis, direction);
+      piece.element.style.transform = pieceTransform(piece);
+    }
+  }
+
+  async function rotatePreview(move, id) {
+    const count = move.includes('2') ? 2 : 1;
+    for (let turn = 0; turn < count; turn++) {
+      if (id !== playbackId) return;
+      rotatePreviewQuarter(move[0], move.includes("'"));
+      await new Promise(resolve => setTimeout(resolve, 410));
     }
   }
 
@@ -69,6 +117,7 @@
   }
 
   function renderPreview() {
+    if (previewBusy || (solution && solutionIndex > 0)) return;
     for (const face of S.faces) for (let index = 0; index < 9; index++) {
       const cubie = previewCubies.get(S.position(face, index).join(','));
       const sticker = cubie.querySelector(`.${S.faceClass[face]}`);
@@ -188,13 +237,15 @@
   }
 
   function invalidateSolution() {
+    playbackId++;
+    previewBusy = false;
     if (solving) stopWorker();
     requestId++;
     solution = null;
     solutionIndex = 0;
+    resetPreviewGeometry();
     ui['solution-result'].hidden = true;
     ui['solution-dock'].hidden = true;
-    window.CuberApp.restoreInput = null;
     status = null;
   }
 
@@ -216,8 +267,9 @@
     ui['dock-fill'].style.width = solution.length ? `${solutionIndex / solution.length * 100}%` : '100%';
     ui['dock-move'].textContent = done ? 'Kubus selesai! ✦' : `Putaran ${solutionIndex + 1}: ${solution[solutionIndex].replace("'", '’')}`;
     ui['dock-description'].textContent = done ? 'Semua warna kembali ke sisinya. Cocokkan dengan Rubik aslimu.' : moveDetail(solution[solutionIndex]);
-    ui['dock-prev'].disabled = solutionIndex === 0 || solving;
-    ui['dock-next'].disabled = done || solving;
+    ui['dock-reset'].disabled = solutionIndex === 0 || solving || previewBusy;
+    ui['dock-prev'].disabled = solutionIndex === 0 || solving || previewBusy;
+    ui['dock-next'].disabled = done || solving || previewBusy;
     ui['solution-moves'].replaceChildren();
     solution.forEach((move, index) => {
       const token = document.createElement('span');
@@ -252,7 +304,7 @@
     const checked = S.validate(state, Cube);
     if (!checked.ok) { setStatus(checked.message, 'error'); return; }
     invalidateSolution();
-    window.CuberApp.loadFacelets(state);
+    renderPreview();
     solving = true;
     ui['solve-real'].disabled = true;
     ui['solve-real'].querySelector('span:nth-child(2)').textContent = 'Menyiapkan solver…';
@@ -261,15 +313,8 @@
       const algorithm = await solveInWorker(checked.facelets);
       solution = algorithm.trim() ? algorithm.trim().split(/\s+/) : [];
       solutionIndex = 0;
-      window.CuberApp.restoreInput = () => {
-        window.CuberApp.loadFacelets(state);
-        solutionIndex = 0;
-        updateSolution();
-        setStatus('Kubus 3D kembali ke kondisi yang kamu masukkan.', 'success');
-      };
       updateSolution();
-      setStatus(solution.length ? `Solusi siap: ${solution.length} putaran. Ikuti satu per satu pada kubus 3D.` : 'Kubus yang kamu masukkan sudah selesai.', 'success');
-      document.getElementById('simulator').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setStatus(solution.length ? `Solusi siap: ${solution.length} putaran. Ikuti langkah pada pratinjau 3D.` : 'Kubus yang kamu masukkan sudah selesai.', 'success');
     } catch (error) {
       if (error.message !== 'cancelled') {
         stopWorker();
@@ -284,16 +329,28 @@
   }
 
   async function advanceSolution(direction) {
-    if (!solution || window.CuberApp.isBusy()) return;
+    if (!solution || solving || previewBusy) return;
     if (direction === 1 && solutionIndex >= solution.length) return;
     if (direction === -1 && solutionIndex <= 0) return;
     const move = direction === 1 ? solution[solutionIndex] : solution[solutionIndex - 1];
     const inverse = move.endsWith('2') ? move : move.endsWith("'") ? move[0] : `${move[0]}'`;
-    ui['dock-prev'].disabled = true;
-    ui['dock-next'].disabled = true;
-    await window.CuberApp.playMove(direction === 1 ? move : inverse);
-    solutionIndex += direction;
+    previewBusy = true;
+    const id = ++playbackId;
     updateSolution();
+    await rotatePreview(direction === 1 ? move : inverse, id);
+    if (id !== playbackId) return;
+    solutionIndex += direction;
+    previewBusy = false;
+    updateSolution();
+  }
+
+  function resetSolution() {
+    if (!solution || previewBusy) return;
+    resetPreviewGeometry();
+    solutionIndex = 0;
+    renderPreview();
+    updateSolution();
+    setStatus('Kubus 3D kembali ke warna awal yang kamu masukkan.', 'success');
   }
 
   function updatePreviewView() {
@@ -321,6 +378,10 @@
   ui['real-cube-wrap'].addEventListener('pointercancel', () => drag = null);
   ui['real-cube-wrap'].addEventListener('click', event => {
     if (suppressPreviewClick) return;
+    if (previewBusy || solutionIndex > 0) {
+      setStatus('Untuk mengubah warna, gunakan grid di kiri atau tekan “Ulangi” terlebih dahulu.', 'error');
+      return;
+    }
     const hit = document.elementFromPoint(event.clientX, event.clientY);
     const sticker = hit?.closest('.cubie-face.paintable');
     if (sticker && ui['real-cube'].contains(sticker)) paintSticker(sticker.dataset.face, Number(sticker.dataset.index));
@@ -330,19 +391,14 @@
   ui['solve-real'].addEventListener('click', solveRealCube);
   ui['dock-next'].addEventListener('click', () => advanceSolution(1));
   ui['dock-prev'].addEventListener('click', () => advanceSolution(-1));
+  ui['dock-reset'].addEventListener('click', resetSolution);
+  ui['show-preview'].addEventListener('click', () => ui['solution-dock'].scrollIntoView({ behavior: 'smooth', block: 'center' }));
   ui['clear-real'].addEventListener('click', () => { state = S.emptyState(); saveState(); invalidateSolution(); selectFace('U'); setStatus('Kotak dikosongkan. Warna pusat kembali ke contoh awal.', 'success'); });
   ui['demo-real'].addEventListener('click', () => {
     const facelets = Cube.random().asString();
     state = Object.fromEntries(S.faces.map((face, faceIndex) => [face, [...facelets.slice(faceIndex * 9, faceIndex * 9 + 9)].map(letter => S.defaultCenters[letter])]));
     saveState(); invalidateSolution(); selectFace('U'); setStatus('Contoh Rubik acak sudah terisi. Klik “Cari solusi” untuk mencobanya.', 'success');
   });
-  window.addEventListener('cuber:manual-change', () => {
-    if (solution) {
-      invalidateSolution();
-      setStatus('Kubus 3D diputar manual. Cari solusi lagi untuk memulai ulang dari warna yang kamu masukkan.', 'error');
-    }
-  });
-
   buildPreviewCube();
   render();
 })();
