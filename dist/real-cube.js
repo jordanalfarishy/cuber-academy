@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const ui = Object.fromEntries([
     'face-tabs', 'face-label', 'face-name', 'face-count', 'face-orientation', 'sticker-grid',
-    'color-palette', 'prev-face', 'next-face', 'real-cube', 'real-cube-wrap',
+    'color-palette', 'prev-face', 'next-face', 'rotate-face', 'real-cube', 'real-cube-wrap',
     'filled-count', 'filled-percent', 'real-progress-fill', 'color-counts', 'real-message',
     'solve-real', 'demo-real', 'clear-real', 'solution-result', 'solution-summary',
     'solution-progress', 'solution-moves', 'solution-dock', 'dock-move',
@@ -26,6 +26,7 @@
   let worker = null;
   let pendingReject = null;
   let requestId = 0;
+  let mainSolverReady = false;
   let status = null;
   let previewX = -25;
   let previewY = -35;
@@ -283,7 +284,7 @@
   function solveInWorker(facelets) {
     return new Promise((resolve, reject) => {
       const id = ++requestId;
-      if (!worker) worker = new Worker('./solve-worker.js');
+      if (!worker) worker = new Worker('./solve-worker.js?v=simulator-fix-1');
       worker.onmessage = event => {
         if (event.data.requestId !== id) return;
         pendingReject = null;
@@ -299,26 +300,70 @@
     });
   }
 
+  async function solveWithFallback(facelets) {
+    try {
+      return await solveInWorker(facelets);
+    } catch (error) {
+      if (error.message === 'cancelled') throw error;
+      worker?.terminate();
+      worker = null;
+      pendingReject = null;
+      const id = requestId;
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (requestId !== id) { reject(new Error('cancelled')); return; }
+          try {
+            if (!mainSolverReady) {
+              Cube.initSolver();
+              mainSolverReady = true;
+            }
+            const cube = Cube.fromString(facelets);
+            const solution = cube.isSolved() ? '' : cube.solve(25);
+            if (solution && !cube.clone().move(solution).isSolved()) throw new Error('Solusi yang dihasilkan tidak sesuai.');
+            resolve(solution);
+          } catch (fallbackError) {
+            reject(fallbackError);
+          }
+        }, 0);
+      });
+    }
+  }
+
   async function solveRealCube() {
     if (solving) return;
-    const checked = S.validate(state, Cube);
+    let checked = S.validate(state, Cube);
+    let orientationNote = '';
+    if (!checked.ok && ['pieces', 'parity'].includes(checked.kind)) {
+      const recovery = S.findValidOrientation(state, Cube);
+      if (recovery.ok) {
+        const adjusted = S.faces.filter(face => recovery.turns[face]).map(face => S.names[face].toLowerCase());
+        state = recovery.state;
+        checked = recovery.validation;
+        saveState();
+        orientationNote = `Arah isian sisi ${adjusted.join(', ')} disesuaikan otomatis. `;
+      } else if (recovery.ambiguous) {
+        setStatus('Ada beberapa kemungkinan arah isian. Gunakan tombol “Putar arah isian sisi” pada sisi yang perlu disesuaikan.', 'error');
+        return;
+      }
+    }
     if (!checked.ok) { setStatus(checked.message, 'error'); return; }
     invalidateSolution();
-    renderPreview();
+    render();
     solving = true;
     ui['solve-real'].disabled = true;
     ui['solve-real'].querySelector('span:nth-child(2)').textContent = 'Menyiapkan solver…';
-    setStatus('Susunan valid. Mesin solusi sedang menyiapkan langkah; ini bisa memakan beberapa detik.', 'success');
+    setStatus(`${orientationNote}Susunan valid. Mesin solusi sedang menyiapkan langkah; ini bisa memakan beberapa detik.`, 'success');
     try {
-      const algorithm = await solveInWorker(checked.facelets);
+      const algorithm = await solveWithFallback(checked.facelets);
       solution = algorithm.trim() ? algorithm.trim().split(/\s+/) : [];
       solutionIndex = 0;
       updateSolution();
-      setStatus(solution.length ? `Solusi siap: ${solution.length} putaran. Ikuti langkah pada pratinjau 3D.` : 'Kubus yang kamu masukkan sudah selesai.', 'success');
+      setStatus(orientationNote + (solution.length ? `Solusi siap: ${solution.length} putaran. Ikuti langkah pada pratinjau 3D.` : 'Kubus yang kamu masukkan sudah selesai.'), 'success');
     } catch (error) {
       if (error.message !== 'cancelled') {
+        console.error('Mesin solusi Cuber gagal:', error);
         stopWorker();
-        setStatus('Mesin solusi belum berhasil memproses kubus ini. Periksa kembali warnanya lalu coba lagi.', 'error');
+        setStatus('Susunan warna sudah valid, tetapi mesin solusi tidak berhasil berjalan. Coba lagi atau muat ulang halaman.', 'error');
       }
     } finally {
       solving = false;
@@ -388,6 +433,13 @@
   });
   ui['prev-face'].addEventListener('click', () => selectFace(S.faces[S.faces.indexOf(activeFace) - 1]));
   ui['next-face'].addEventListener('click', () => selectFace(S.faces[S.faces.indexOf(activeFace) + 1]));
+  ui['rotate-face'].addEventListener('click', () => {
+    state[activeFace] = S.rotateGrid(state[activeFace]);
+    saveState();
+    invalidateSolution();
+    render();
+    setStatus(`Arah isian sisi ${S.names[activeFace].toLowerCase()} diputar 90°.`, 'success');
+  });
   ui['solve-real'].addEventListener('click', solveRealCube);
   ui['dock-next'].addEventListener('click', () => advanceSolution(1));
   ui['dock-prev'].addEventListener('click', () => advanceSolution(-1));

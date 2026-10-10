@@ -7,11 +7,12 @@
     <meta name="description" content="Belajar Rubik 3×3 secara visual lewat kubus 3D interaktif, latihan gerakan, dan panduan langkah demi langkah." />
     <title>Cuber — Belajar Rubik dengan cara melihat</title>
     <script src="./mode.js"></script>
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css?v=simulator-fix-1" />
     <script src="./vendor/cube.js" defer></script>
-    <script src="./cube-state.js" defer></script>
+    <script src="./vendor/solve.js" defer></script>
+    <script src="./cube-state.js?v=simulator-fix-1" defer></script>
     <script src="./app.js" defer></script>
-    <script src="./real-cube.js" defer></script>
+    <script src="./real-cube.js?v=simulator-fix-1" defer></script>
   </head>
   <body>
     <div class="page-shell">
@@ -96,7 +97,7 @@
               <h3 id="real-input-title">Isi satu sisi,<br />lalu lanjut.</h3>
               <p class="real-help">Pilih warna, lalu ketuk kotaknya. Kotak tengah adalah warna pusat dan bisa diubah sesuai Rubikmu.</p>
               <div class="face-tabs" id="face-tabs" role="tablist" aria-label="Pilih sisi yang diisi"></div>
-              <div class="face-card"><div class="face-card-top"><div><span class="mini-label" id="face-label">SISI ATAS</span><strong id="face-name">Atas / U</strong></div><span id="face-count">1 / 9</span></div><p id="face-orientation">Bagian bawah grid ini berbatasan dengan sisi depan.</p><div class="sticker-grid" id="sticker-grid" aria-label="Kotak warna sisi yang dipilih"></div></div>
+              <div class="face-card"><div class="face-card-top"><div><span class="mini-label" id="face-label">SISI ATAS</span><strong id="face-name">Atas / U</strong></div><span id="face-count">1 / 9</span></div><p id="face-orientation">Bagian bawah grid ini berbatasan dengan sisi depan.</p><div class="sticker-grid" id="sticker-grid" aria-label="Kotak warna sisi yang dipilih"></div><button type="button" id="rotate-face" class="rotate-face" title="Ubah arah kisi sisi ini 90°, tanpa mengubah warna kotaknya">↻ Putar arah isian sisi</button></div>
               <span class="mini-label palette-heading">PILIH WARNA</span>
               <div class="color-palette" id="color-palette" aria-label="Pilihan warna stiker"></div>
               <div class="face-navigation"><button type="button" id="prev-face">← Sisi sebelumnya</button><button type="button" id="next-face">Sisi berikutnya →</button></div>

@@ -26,6 +26,22 @@ test('entered colors reject incomplete and physically impossible states', () => 
   const flippedEdge = toColorState(solved);
   [flippedEdge.U[7], flippedEdge.F[1]] = [flippedEdge.F[1], flippedEdge.U[7]];
   assert.equal(State.validate(flippedEdge, Cube).ok, false);
+  assert.equal(State.findValidOrientation(flippedEdge, Cube).ok, false);
+});
+
+test('correct stickers entered with rotated face grids are recovered', () => {
+  const cube = new Cube();
+  cube.move("R U F2 L' D B U2 R'");
+  const original = toColorState(cube.asString());
+  const entered = Object.fromEntries(State.faces.map(face => [face, [...original[face]]]));
+  entered.U = State.rotateGrid(entered.U);
+  entered.R = State.rotateGrid(State.rotateGrid(entered.R));
+  entered.B = State.rotateGrid(State.rotateGrid(State.rotateGrid(entered.B)));
+  assert.equal(State.validate(entered, Cube).ok, false);
+  const recovered = State.findValidOrientation(entered, Cube);
+  assert.equal(recovered.ok, true);
+  assert.deepEqual(recovered.state, original);
+  assert.equal(recovered.validation.facelets, cube.asString());
 });
 
 test('a valid entered scramble solves to six single-color faces', () => {

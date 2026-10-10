@@ -38,6 +38,10 @@
     return Object.fromEntries(faces.map(face => [face, Array.from({ length: 9 }, (_, i) => i === 4 ? defaultCenters[face] : null)]));
   }
 
+  function rotateGrid(values) {
+    return [values[6], values[3], values[0], values[7], values[4], values[1], values[8], values[5], values[2]];
+  }
+
   function rotateVector(vector, axis, dir) {
     const [x, y, z] = vector;
     if (axis === 0) return [x, -dir * z, dir * y];
@@ -86,15 +90,15 @@
   }
 
   function validate(state, Cube) {
-    if (!isStateShape(state)) return { ok: false, message: 'Data warna belum terbaca. Coba kosongkan dan isi ulang.' };
+    if (!isStateShape(state)) return { ok: false, kind: 'shape', message: 'Data warna belum terbaca. Coba kosongkan dan isi ulang.' };
     const centers = faces.map(face => state[face][4]);
-    if (centers.some(code => !code) || new Set(centers).size !== 6) return { ok: false, message: 'Enam pusat sisi harus memakai enam warna yang berbeda.' };
+    if (centers.some(code => !code) || new Set(centers).size !== 6) return { ok: false, kind: 'centers', message: 'Enam pusat sisi harus memakai enam warna yang berbeda.' };
     const entries = faces.flatMap(face => state[face]);
     const missing = entries.filter(code => !code).length;
-    if (missing) return { ok: false, message: `Masih ada ${missing} kotak yang belum diberi warna.` };
+    if (missing) return { ok: false, kind: 'missing', message: `Masih ada ${missing} kotak yang belum diberi warna.` };
     for (const [code, details] of Object.entries(colors)) {
       const count = entries.filter(value => value === code).length;
-      if (count !== 9) return { ok: false, message: `Warna ${details.name.toLowerCase()} berjumlah ${count}. Setiap warna harus tepat 9 kotak.` };
+      if (count !== 9) return { ok: false, kind: 'count', message: `Warna ${details.name.toLowerCase()} berjumlah ${count}. Setiap warna harus tepat 9 kotak.` };
     }
     const colorToFace = Object.fromEntries(faces.map(face => [state[face][4], face]));
     const facelets = entries.map(code => colorToFace[code]).join('');
@@ -102,18 +106,68 @@
       const cube = Cube.fromString(facelets);
       const { cp, co, ep, eo } = cube.toJSON();
       if (cube.asString() !== facelets || !isPermutation(cp) || !isPermutation(ep)) {
-        return { ok: false, message: 'Ada kombinasi stiker yang tidak cocok dengan potongan Rubik 3×3. Periksa arah sisi dan warna yang mungkin tertukar.' };
+        return { ok: false, kind: 'pieces', message: 'Ada kombinasi stiker yang tidak cocok dengan potongan Rubik 3×3. Periksa arah sisi dan warna yang mungkin tertukar.' };
       }
       if (co.reduce((sum, value) => sum + value, 0) % 3 || eo.reduce((sum, value) => sum + value, 0) % 2 || permutationParity(cp) !== permutationParity(ep)) {
-        return { ok: false, message: 'Susunan ini tidak bisa terjadi lewat putaran Rubik biasa. Periksa lagi kotak yang mungkin salah isi atau terbalik.' };
+        return { ok: false, kind: 'parity', message: 'Susunan ini tidak bisa terjadi lewat putaran Rubik biasa. Periksa lagi kotak yang mungkin salah isi atau terbalik.' };
       }
       return { ok: true, facelets, cube };
     } catch {
-      return { ok: false, message: 'Susunan warna belum valid. Periksa kembali orientasi dan warna tiap sisi.' };
+      return { ok: false, kind: 'pieces', message: 'Susunan warna belum valid. Periksa kembali orientasi dan warna tiap sisi.' };
     }
   }
 
-  const api = { faces, faceClass, names, orientation, colors, defaultCenters, faceMeta, position, rotateVector, moveFacelets, emptyState, isStateShape, validate };
+  function findValidOrientation(state, Cube) {
+    const original = validate(state, Cube);
+    if (original.ok) return { ok: true, state, turns: Object.fromEntries(faces.map(face => [face, 0])), validation: original };
+    if (!['pieces', 'parity'].includes(original.kind)) return { ok: false, original };
+
+    const variants = Object.fromEntries(faces.map(face => {
+      const options = [];
+      let grid = state[face];
+      for (let turns = 0; turns < 4; turns++) {
+        if (!options.some(option => option.grid.every((code, index) => code === grid[index]))) {
+          options.push({ grid: [...grid], turns });
+        }
+        grid = rotateGrid(grid);
+      }
+      return [face, options];
+    }));
+
+    const candidate = {};
+    const turns = {};
+    let match = null;
+    let ambiguous = false;
+
+    function search(index) {
+      if (ambiguous) return;
+      if (index === faces.length) {
+        const validation = validate(candidate, Cube);
+        if (!validation.ok) return;
+        if (match) { ambiguous = true; return; }
+        match = {
+          state: Object.fromEntries(faces.map(face => [face, [...candidate[face]]])),
+          turns: { ...turns },
+          validation
+        };
+        return;
+      }
+      const face = faces[index];
+      for (const option of variants[face]) {
+        candidate[face] = option.grid;
+        turns[face] = option.turns;
+        search(index + 1);
+        if (ambiguous) return;
+      }
+    }
+
+    search(0);
+    if (ambiguous) return { ok: false, ambiguous: true, original };
+    if (!match) return { ok: false, original };
+    return { ok: true, ...match };
+  }
+
+  const api = { faces, faceClass, names, orientation, colors, defaultCenters, faceMeta, position, rotateVector, moveFacelets, rotateGrid, emptyState, isStateShape, validate, findValidOrientation };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else window.CubeState = api;
 })();
